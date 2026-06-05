@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Match, Pick } from "@/lib/types";
 import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/lib/supabase";
 
 const PICK_LABELS: Record<Pick, string> = {
   home: "Home win",
@@ -29,23 +30,43 @@ export default function MatchesPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
+    if (!user) return;
+  
     fetch("/api/matches")
       .then((r) => r.json())
       .then((data) => { setMatches(Array.isArray(data) ? data : []); setLoading(false); });
-  }, []);
+  
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetch("/api/predictions", {
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data)) {
+            const existing: Record<string, Pick> = {};
+            data.forEach((p: any) => { existing[p.match_id] = p.pick; });
+            setPicks(existing);
+          }
+        });
+    });
+  }, [user]);
 
   function select(matchId: string, pick: Pick) {
     setPicks((prev) => ({ ...prev, [matchId]: pick }));
   }
 
   async function savePredictions() {
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log("session:", session);
+    
     await fetch("/api/predictions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session?.access_token}`,
+      },
       body: JSON.stringify({ picks }),
     });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
   }
 
   if (authLoading || !user) return <p className="text-gray-500 text-sm">Loading…</p>;

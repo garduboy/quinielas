@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
+import { supabase } from "@/lib/supabase";
 
 interface PredictionWithMatch {
   id: string;
@@ -28,9 +29,13 @@ export default function ResultsPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("/api/predictions")
-      .then((r) => r.json())
-      .then((data) => { setPredictions(Array.isArray(data) ? data : []); setLoading(false); });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      fetch("/api/predictions", {
+        headers: { Authorization: `Bearer ${session?.access_token}` }
+      })
+        .then((r) => r.json())
+        .then((data) => { setPredictions(Array.isArray(data) ? data : []); setLoading(false); });
+    });
   }, [user]);
 
   if (authLoading || !user) return <p className="text-gray-500 text-sm">Loading…</p>;
