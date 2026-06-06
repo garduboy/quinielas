@@ -6,8 +6,8 @@ export async function GET() {
   const { data, error } = await supabase
     .from("matches")
     .select("*")
-    .eq("status", "upcoming")
-    .order("kickoff", { ascending: true });
+    .order("kickoff", { ascending: true })
+    .range(0, 199);
 
   if (error) {
     console.error("Failed to fetch matches:", error.message);
