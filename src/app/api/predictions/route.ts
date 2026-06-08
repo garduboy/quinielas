@@ -39,6 +39,18 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not logged in" }, { status: 401 });
 
+  const matchIds = Object.keys(picks);
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("id, kickoff")
+    .in("id", matchIds);
+
+  const now = new Date();
+  const locked = matches?.some(m => new Date(m.kickoff) <= now);
+  if (locked) {
+    return NextResponse.json({ error: "One or more matches have already started" }, { status: 403 });
+  }
+
   const rows = Object.entries(picks).map(([match_id, pick]) => ({
     user_id: user.id,
     match_id,
