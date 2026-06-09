@@ -46,7 +46,11 @@ export async function POST(req: NextRequest) {
     .in("id", matchIds);
 
   const now = new Date();
-  const locked = matches?.some(m => new Date(m.kickoff) <= now);
+  const locked = matches?.some(m => {
+    const cutoff = new Date(m.kickoff);
+    cutoff.setHours(cutoff.getHours() - 24);
+    return now >= cutoff;
+  });
   if (locked) {
     return NextResponse.json({ error: "One or more matches have already started" }, { status: 403 });
   }

@@ -57,6 +57,12 @@ export default function MatchesPage() {
     setPicks((prev) => ({ ...prev, [matchId]: pick }));
   }
 
+  function isLocked(kickoff: string) {
+    const cutoff = new Date(kickoff);
+    cutoff.setHours(cutoff.getHours() - 24);
+    return new Date() >= cutoff;
+  }
+
   async function savePredictions() {
     const { data: { session } } = await supabase.auth.getSession();
     console.log("session:", session);
@@ -83,7 +89,7 @@ export default function MatchesPage() {
   if (loading) return <p className="text-gray-500 text-sm">Loading matches…</p>;
 
   const unsavedCount = Object.entries(picks).filter(
-    ([id, pick]) => savedPicks[id] !== pick
+    ([id, pick]) => savedPicks[id] !== pick && !isLocked(matches.find(m => m.id === id)?.kickoff ?? "")
   ).length;
 
   const upcoming = matches.filter((m) => m.status === "upcoming");
@@ -110,22 +116,32 @@ export default function MatchesPage() {
               <p className="text-xs text-gray-400 text-center">vs</p>
               <p className="font-medium text-center text-sm">{match.away_team}</p>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              {(["home", "draw", "away"] as Pick[]).map((opt) => {
-                const active = picks[match.id] === opt;
-                return (
-                  <button
-                    key={opt}
-                    onClick={() => select(match.id, opt)}
-                    className={`py-2 px-1 text-xs font-medium rounded-lg border transition-all ${
-                      active ? PICK_COLORS[opt] + " border-2" : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    {opt === "home" ? match.home_team : opt === "away" ? match.away_team : "Draw"}
-                  </button>
-                );
-              })}
-            </div>
+            {isLocked(match.kickoff) ? (
+              <div className="text-center py-2 text-sm font-medium text-gray-500">
+                {picks[match.id] 
+                  ? `Your pick: ${picks[match.id] === "home" ? match.home_team : picks[match.id] === "away" ? match.away_team : "Draw"}`
+                  : "No prediction made"
+                }
+                <span className="ml-2 text-xs text-orange-500">🔒 Locked</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {(["home", "draw", "away"] as Pick[]).map((opt) => {
+                  const active = picks[match.id] === opt;
+                  return (
+                    <button
+                      key={opt}
+                      onClick={() => select(match.id, opt)}
+                      className={`py-2 px-1 text-xs font-medium rounded-lg border transition-all ${
+                        active ? PICK_COLORS[opt] + " border-2" : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                      }`}
+                    >
+                      {opt === "home" ? match.home_team : opt === "away" ? match.away_team : "Draw"}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </div>
