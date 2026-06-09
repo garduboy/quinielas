@@ -28,6 +28,7 @@ export default function NavBar() {
           <Link href="/matches" className="px-3 py-1.5 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors">Matches</Link>
           <Link href="/leaderboard" className="px-3 py-1.5 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors">Leaderboard</Link>
           <Link href="/results" className="px-3 py-1.5 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors">Results</Link>
+          <Link href="/reveal" className="px-3 py-1.5 rounded-md text-sm text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors">Picks</Link>
         </div>
       )}
 
