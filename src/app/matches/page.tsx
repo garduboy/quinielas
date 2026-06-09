@@ -24,6 +24,7 @@ export default function MatchesPage() {
   const [picks, setPicks] = useState<Record<string, Pick>>({});
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [savedPicks, setSavedPicks] = useState<Record<string, Pick>>({});
 
   useEffect(() => {
     if (!authLoading && !user) router.push("/login");
@@ -46,6 +47,7 @@ export default function MatchesPage() {
             const existing: Record<string, Pick> = {};
             data.forEach((p: any) => { existing[p.match_id] = p.pick; });
             setPicks(existing);
+            setSavedPicks(existing);
           }
         });
     });
@@ -59,7 +61,7 @@ export default function MatchesPage() {
     const { data: { session } } = await supabase.auth.getSession();
     console.log("session:", session);
     
-    await fetch("/api/predictions", {
+    const res = await fetch("/api/predictions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -67,10 +69,22 @@ export default function MatchesPage() {
       },
       body: JSON.stringify({ picks }),
     });
+
+    if (res.ok) {
+      setSaved(true);
+      setSavedPicks({ ...picks }); // snapshot of what's saved
+      setTimeout(() => setSaved(false), 3000);
+    } else {
+      alert("Failed to save predictions. Please try again.");
+    }
   }
 
   if (authLoading || !user) return <p className="text-gray-500 text-sm">Loading…</p>;
   if (loading) return <p className="text-gray-500 text-sm">Loading matches…</p>;
+
+  const unsavedCount = Object.entries(picks).filter(
+    ([id, pick]) => savedPicks[id] !== pick
+  ).length;
 
   const upcoming = matches.filter((m) => m.status === "upcoming");
 
@@ -119,9 +133,12 @@ export default function MatchesPage() {
       {upcoming.length > 0 && (
         <button
           onClick={savePredictions}
-          className="w-full py-3 bg-[#1D9E75] hover:bg-[#0F6E56] text-white font-medium rounded-xl transition-colors"
+          disabled={unsavedCount === 0}
+          className={`w-full py-3 text-white font-medium rounded-xl transition-colors ${
+            unsavedCount === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-[#1D9E75] hover:bg-[#0F6E56]"
+          }`}
         >
-          {saved ? "✓ Predictions saved!" : `Save ${Object.keys(picks).length}/${upcoming.length} predictions`}
+          {saved ? "✓ Predictions saved!" : unsavedCount > 0 ? `Save ${unsavedCount} unsaved predictions` : "All predictions saved"}
         </button>
       )}
     </div>
