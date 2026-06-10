@@ -44,7 +44,8 @@ export default function RevealPage() {
     if (!user) return;
     supabase.auth.getSession().then(({ data: { session } }) => {
       fetch("/api/picks-reveal", {
-        headers: { Authorization: `Bearer ${session?.access_token}` }
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        cache: "no-store",
       })
         .then((r) => r.json())
         .then((data: RevealRow[]) => {
