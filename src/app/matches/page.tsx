@@ -67,14 +67,19 @@ export default function MatchesPage() {
   async function savePredictions() {
     const { data: { session } } = await supabase.auth.getSession();
     console.log("session:", session);
-    
+
+    const newPicks = Object.fromEntries(
+      Object.entries(picks).filter(([id, pick]) => savedPicks[id] !== pick)
+    );
+    console.log("newPicks:", JSON.stringify(newPicks));
+
     const res = await fetch("/api/predictions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${session?.access_token}`,
       },
-      body: JSON.stringify({ picks }),
+      body: JSON.stringify({ picks: newPicks }),
     });
 
     if (res.ok) {
