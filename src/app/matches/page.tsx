@@ -58,10 +58,10 @@ export default function MatchesPage() {
   }
 
   function isLocked(kickoff: string) {
-    // const cutoff = new Date(kickoff);
-    // cutoff.setHours(cutoff.getHours() - 24);
-    // return new Date() >= cutoff;
-    return false;
+    const cutoff = new Date(kickoff);
+    cutoff.setHours(cutoff.getHours() - 24);
+    return new Date() >= cutoff;
+    // return false;
   }
 
   async function savePredictions() {
