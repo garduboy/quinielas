@@ -14,6 +14,7 @@ interface PredictionWithMatch {
     home_score: number | null;
     away_score: number | null;
     status: string;
+    kickoff: string;
   };
 }
 
