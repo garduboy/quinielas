@@ -1,3 +1,7 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-export default nextConfig;
+const nextConfig = {
+    experimental: {
+      fetchCache: 'force-no-store',
+    }
+  };
+  export default nextConfig;
