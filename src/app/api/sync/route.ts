@@ -45,7 +45,10 @@ export async function GET(req: NextRequest) {
   console.log("fetching from football-data.org");
   const res = await fetch(
     "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
-    { headers: { "X-Auth-Token": process.env.FOOTBALL_DATA_API_KEY! } }
+    { 
+      headers: { "X-Auth-Token": process.env.FOOTBALL_DATA_API_KEY! },
+      cache: 'no-store'
+    }
   );
   console.log("football-data response status:", res.status);
   const json = await res.json();
