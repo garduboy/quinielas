@@ -18,35 +18,38 @@ function getResult(homeScore: number, awayScore: number): string {
   return "draw";
 }
 
-function pointsForRound(round: string): number {
-  switch (round) {
-    case "round_of_32":
-    case "round_of_16": return 2;
-    case "quarterfinal":
-    case "semifinal": return 3;
-    case "final": return 4;
-    default: return 1;
-  }
-}
-
 export async function GET(req: NextRequest) {
-  // Protect the route with a secret so only Vercel cron can call it
+  console.log("sync route called");
+
   const secret = req.nextUrl.searchParams.get("secret");
+  console.log("secret check:", secret === process.env.CRON_SECRET ? "ok" : "fail");
   if (secret !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  console.log("url:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log("service key exists:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Fetch finished matches from football-data.org
+  const { data: test, error: testError } = await supabase
+    .from("matches")
+    .select("id, home_team, away_team")
+    .limit(3);
+  console.log("test query result:", JSON.stringify(test));
+  console.log("test query error:", JSON.stringify(testError));
+
+  console.log("fetching from football-data.org");
   const res = await fetch(
     "https://api.football-data.org/v4/competitions/WC/matches?status=FINISHED",
     { headers: { "X-Auth-Token": process.env.FOOTBALL_DATA_API_KEY! } }
   );
+  console.log("football-data response status:", res.status);
   const json = await res.json();
+  console.log("total finished matches from API:", json.matches?.length);
   const matches = json.matches ?? [];
 
   let updated = 0;
@@ -57,49 +60,39 @@ export async function GET(req: NextRequest) {
     const externalId = String(match.id);
     const round = ROUND_MAP[match.stage] ?? "group";
     const result = getResult(homeScore, awayScore);
-    const points = pointsForRound(round);
 
-    // Find match in our DB by external_id or by team names
-    const { data: dbMatches } = await supabase
+    console.log(`looking up: "${match.homeTeam.name}" vs "${match.awayTeam.name}"`);
+
+    const { data: dbMatches, error: lookupError } = await supabase
       .from("matches")
-      .select("id, status")
-      .ilike("home_team", `%${match.homeTeam.name}%`)
-      .ilike("away_team", `%${match.awayTeam.name}%`)
-      .limit(1);
+      .select("id, status, home_team, away_team")
+      .eq("home_team", match.homeTeam.name)
+      .eq("away_team", match.awayTeam.name);
+
+    console.log(`found: ${JSON.stringify(dbMatches)} error: ${JSON.stringify(lookupError)}`);
 
     const dbMatch = dbMatches?.[0];
-    if (!dbMatch || dbMatch.status === "finished") continue;
+    if (!dbMatch) { console.log("no match found, skipping"); continue; }
+    if (dbMatch.status === "finished") { console.log("already finished, skipping"); continue; }
 
-    // Update match
-    await supabase
+    console.log(`updating match ${dbMatch.id} with score ${homeScore}-${awayScore}`);
+    const { error: updateError } = await supabase
       .from("matches")
-      .update({
-        home_score: homeScore,
-        away_score: awayScore,
-        status: "finished",
-        external_id: externalId,
-        round,
-      })
+      .update({ home_score: homeScore, away_score: awayScore, status: "finished", external_id: externalId, round })
       .eq("id", dbMatch.id);
+    console.log("update error:", JSON.stringify(updateError));
 
-    // Score predictions
-    await supabase
-      .from("predictions")
-      .update({ points_earned: points })
-      .eq("match_id", dbMatch.id)
-      .eq("pick", result);
-
-    // Zero out wrong predictions
-    await supabase
-      .from("predictions")
-      .update({ points_earned: 0 })
-      .eq("match_id", dbMatch.id)
-      .neq("pick", result)
-      .is("points_earned", null);
+    console.log(`scoring predictions for match ${dbMatch.id}, result: ${result}`);
+    const { error: scoreError } = await supabase.rpc('score_predictions', {
+      p_match_id: dbMatch.id,
+      p_result: result,
+    });
+    console.log("score error:", JSON.stringify(scoreError));
 
     updated++;
   }
 
+  console.log("sync complete, updated:", updated);
   return NextResponse.json({ ok: true, updated, matches: matches.map((m: any) => ({
     home: m.homeTeam.name,
     away: m.awayTeam.name,
