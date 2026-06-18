@@ -99,5 +99,10 @@ export async function GET(req: NextRequest) {
     updated++;
   }
 
-  return NextResponse.json({ ok: true, updated });
+  return NextResponse.json({ ok: true, updated, matches: matches.map((m: any) => ({
+    home: m.homeTeam.name,
+    away: m.awayTeam.name,
+    status: m.status,
+    score: m.score.fullTime,
+  }))});
 }
