@@ -63,7 +63,8 @@ export async function GET(req: NextRequest) {
     const { data: dbMatches } = await supabase
       .from("matches")
       .select("id, status")
-      .or(`external_id.eq.${externalId},and(home_team.ilike.%${match.homeTeam.name}%,away_team.ilike.%${match.awayTeam.name}%)`)
+      .ilike("home_team", `%${match.homeTeam.name}%`)
+      .ilike("away_team", `%${match.awayTeam.name}%`)
       .limit(1);
 
     const dbMatch = dbMatches?.[0];
