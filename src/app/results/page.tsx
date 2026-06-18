@@ -41,7 +41,9 @@ export default function ResultsPage() {
   if (authLoading || !user) return <p className="text-gray-500 text-sm">Loading…</p>;
   if (loading) return <p className="text-gray-500 text-sm">Loading results…</p>;
 
-  const finished = predictions.filter((p) => p.matches.status === "finished");
+  const finished = predictions
+  .filter((p) => p.matches.status === "finished")
+  .sort((a, b) => new Date(b.matches.kickoff).getTime() - new Date(a.matches.kickoff).getTime());
   const correct = finished.filter((p) => p.points_earned && p.points_earned > 0).length;
   const totalPoints = predictions.reduce((sum, p) => sum + (p.points_earned ?? 0), 0);
   const accuracy = finished.length > 0 ? Math.round((correct / finished.length) * 100) : 0;
