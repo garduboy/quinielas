@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@/hooks/useUser";
 import type { LeaderboardEntry } from "@/lib/types";
-import { supabase } from "@/lib/supabase";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -19,13 +18,9 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      fetch("/api/leaderboard", {
-        headers: { Authorization: `Bearer ${session?.access_token}` }
-      })
-        .then((r) => r.json())
-        .then((data) => { setPlayers(Array.isArray(data) ? data : []); setLoading(false); });
-    });
+    fetch("/api/leaderboard")
+      .then((r) => r.json())
+      .then((data) => { setPlayers(Array.isArray(data) ? data : []); setLoading(false); });
   }, [user]);
 
   if (authLoading || !user) return <p className="text-gray-500 text-sm">Loading…</p>;
