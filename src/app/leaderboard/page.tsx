@@ -26,6 +26,18 @@ export default function LeaderboardPage() {
   if (authLoading || !user) return <p className="text-gray-500 text-sm">Loading…</p>;
   if (loading) return <p className="text-gray-500 text-sm">Loading standings…</p>;
 
+  // Compute ranks accounting for ties (1,2,2,2,5,...)
+  const ranks: number[] = [];
+  players.forEach((p, i) => {
+    if (i === 0) { ranks.push(1); return; }
+    ranks.push(players[i - 1].total_points === p.total_points ? ranks[i - 1] : i + 1);
+  });
+
+  const myRank = (() => {
+    const idx = players.findIndex(p => p.user_id === user.id);
+    return idx === -1 ? null : ranks[idx];
+  })();
+
   return (
     <div className="space-y-6">
       <div>
@@ -37,7 +49,7 @@ export default function LeaderboardPage() {
         {[
           { label: "Players", value: players.length },
           { label: "Top score", value: players[0]?.total_points ?? 0 },
-          { label: "Your rank", value: (players.findIndex(p => p.user_id === user.id) + 1) || "—" },
+          { label: "Your rank", value: myRank ?? "—" },
         ].map((s) => (
           <div key={s.label} className="bg-gray-100 rounded-xl p-3 text-center">
             <p className="text-2xl font-medium text-gray-900">{s.value}</p>
@@ -50,7 +62,7 @@ export default function LeaderboardPage() {
         {players.length === 0 && <p className="text-sm text-gray-500">No predictions submitted yet.</p>}
         {players.map((p, i) => (
           <div key={p.user_id} className={`bg-white rounded-xl border p-3 flex items-center gap-3 ${p.user_id === user.id ? "border-[#1D9E75]" : "border-gray-200"}`}>
-            <span className="w-6 text-center text-sm">{i < 3 ? MEDALS[i] : i + 1}</span>
+            <span className="w-6 text-center text-sm">{ranks[i] <= 3 ? MEDALS[ranks[i] - 1] : ranks[i]}</span>
             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 text-xs font-medium flex items-center justify-center">
               {p.display_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
             </div>
