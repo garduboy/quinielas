@@ -11,6 +11,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("leaderboard")
     .select("*")
+    .order('total_points', { ascending: false })
     .range(0, 99);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
