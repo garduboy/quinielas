@@ -33,7 +33,7 @@ export default function MatchesPage() {
   useEffect(() => {
     if (!user) return;
   
-    fetch("/api/matches")
+    fetch("/api/matches", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => { setMatches(Array.isArray(data) ? data : []); setLoading(false); });
   

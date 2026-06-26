@@ -18,7 +18,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetch("/api/leaderboard")
+    fetch("/api/leaderboard", { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => { setPlayers(Array.isArray(data) ? data : []); setLoading(false); });
   }, [user]);
