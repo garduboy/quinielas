@@ -2,6 +2,7 @@ export type Pick = "home" | "draw" | "away";
 
 export interface Match {
   id: string;
+  round: string;
   home_team: string;
   away_team: string;
   league: string;

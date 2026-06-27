@@ -42,13 +42,14 @@ export async function POST(req: NextRequest) {
   const matchIds = Object.keys(picks);
   const { data: matches } = await supabase
     .from("matches")
-    .select("id, kickoff")
+    .select("id, kickoff, round")
     .in("id", matchIds);
 
   const now = new Date();
   const locked = matches?.some(m => {
     const cutoff = new Date(m.kickoff);
-    cutoff.setHours(cutoff.getHours() - 24);
+    const hours = m.round === 'group' ? 24 : 1;
+    cutoff.setHours(cutoff.getHours() - hours);
     return now >= cutoff;
     // return false;
   });

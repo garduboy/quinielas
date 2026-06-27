@@ -57,9 +57,11 @@ export default function MatchesPage() {
     setPicks((prev) => ({ ...prev, [matchId]: pick }));
   }
 
-  function isLocked(kickoff: string) {
+  function isLocked(kickoff: string, round: string) {
+    console.log("isLocked", kickoff, round);
     const cutoff = new Date(kickoff);
-    cutoff.setHours(cutoff.getHours() - 24);
+    const hours = round === 'group' ? 24 : 1;
+    cutoff.setHours(cutoff.getHours() - hours);
     return new Date() >= cutoff;
     // return false;
   }
@@ -95,7 +97,10 @@ export default function MatchesPage() {
   if (loading) return <p className="text-gray-500 text-sm">Loading matches…</p>;
 
   const unsavedCount = Object.entries(picks).filter(
-    ([id, pick]) => savedPicks[id] !== pick && !isLocked(matches.find(m => m.id === id)?.kickoff ?? "")
+    ([id, pick]) => savedPicks[id] !== pick && !isLocked(
+      matches.find(m => m.id === id)?.kickoff ?? "",
+      matches.find(m => m.id === id)?.round ?? ""
+    )
   ).length;
 
   const upcoming = matches.filter((m) => m.status === "upcoming");
@@ -122,7 +127,7 @@ export default function MatchesPage() {
               <p className="text-xs text-gray-400 text-center">vs</p>
               <p className="font-medium text-center text-sm">{match.away_team}</p>
             </div>
-            {isLocked(match.kickoff) ? (
+            {isLocked(match.kickoff, match.round) ? (
               <div className="text-center py-2 text-sm font-medium text-gray-500">
                 {picks[match.id] 
                   ? `Your pick: ${picks[match.id] === "home" ? match.home_team : picks[match.id] === "away" ? match.away_team : "Draw"}`
