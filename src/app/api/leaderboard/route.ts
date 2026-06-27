@@ -9,11 +9,7 @@ export async function GET() {
     { global: { headers: { "Cache-Control": "no-cache" } } }
   );
 
-  const { data, error } = await supabase
-    .from("leaderboard")
-    .select("*")
-    .order('total_points', { ascending: false })
-    .range(0, 99);
+  const { data, error } = await supabase.rpc('get_leaderboard');
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json(data, {
