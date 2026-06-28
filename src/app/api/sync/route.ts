@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
     const awayScore = match.score.fullTime.away;
     const externalId = String(match.id);
     const round = ROUND_MAP[match.stage] ?? "group";
+    console.log(`match: ${match.homeTeam.name} vs ${match.awayTeam.name}, stage: ${match.stage}, round: ${round}`);
     const result = getResult(homeScore, awayScore);
 
     console.log(`looking up: "${match.homeTeam.name}" vs "${match.awayTeam.name}"`);
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
     console.log(`updating match ${dbMatch.id} with score ${homeScore}-${awayScore}`);
     const { error: updateError } = await supabase
       .from("matches")
-      .update({ home_score: homeScore, away_score: awayScore, status: "finished", external_id: externalId, round })
+      .update({ home_score: homeScore, away_score: awayScore, status: "finished", external_id: externalId })
       .eq("id", dbMatch.id);
     console.log("update error:", JSON.stringify(updateError));
 
